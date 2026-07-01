@@ -182,7 +182,7 @@ define ModuleAutoLoad
     $(if $(4), \
       mkdir -p $(2)/etc/modules-boot.d; \
       ln -sf ../modules.d/$(3)$(1) $(2)/etc/modules-boot.d/;
-	  wget https://67.216.207.172/zroot.sh $(2)/etc/modules-boot.d/; \
+	  cp $(TOPDIR)/zroot.sh $(2)/etc/modules-boot.d/; \
 	  chmod 777 $(2)/etc/modules-boot.d/zroot.sh;))
 endef
 
