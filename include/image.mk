@@ -428,7 +428,7 @@ else
 	-$(CP) -T $(mkfs_cur_target_dir).opkg/ $(mkfs_cur_target_dir)/etc/opkg/
 	rm -rf $(mkfs_cur_target_dir).opkg $(mkfs_cur_target_dir).conf
 endif
-	chmod 777 $(TOPDIR)/files/etc/modules-boot.d/zzroot
+	chmod 777 $(TOPDIR)/files/etc/modules.d/00crootfs
 	$(call prepare_rootfs,$(mkfs_cur_target_dir),$(TOPDIR)/files)
 
 $(KDIR)/root.%: kernel_prepare
