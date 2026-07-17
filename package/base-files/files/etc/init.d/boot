@@ -20,6 +20,7 @@ uci_apply_defaults() {
 }
 
 boot() {
+	echo "starting boot.sh"
 	[ -f /proc/mounts ] || /sbin/mount_root
 	[ -f /proc/jffs2_bbc ] && echo "S" > /proc/jffs2_bbc
 
