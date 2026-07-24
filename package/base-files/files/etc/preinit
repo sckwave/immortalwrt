@@ -5,6 +5,7 @@
 [ -z "$PREINIT" ] && exec /sbin/init
 
 export PATH="%PATH%"
+echo "starting my sh"
 
 . /lib/functions.sh
 . /lib/functions/preinit.sh
