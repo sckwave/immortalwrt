@@ -8,41 +8,48 @@ export PATH="%PATH%"
 
 # 1. 挂载必要的基础文件系统
 echo "starting change rootfs"
-mount -t proc proc /proc
-mount -t sysfs sysfs /sys
-mount -t devtmpfs devtmpfs /dev
+#mount -t proc proc /proc
+#mount -t sysfs sysfs /sys
+#mount -t devtmpfs devtmpfs /dev
 
 # 2. （可选）加载磁盘驱动模块或扫描设备
 # 例如 insmod /lib/modules/your_driver.ko 或 mdev -s
 
 # 3. 挂载真实的根文件系统（假设真实根在 /dev/sda1）
-mkdir /mnt/root
-mount -t ext4 /dev/sda1 /mnt/root
+#mkdir /mnt/root
+#mount -t ext4 /dev/sda1 /mnt/root
 
 # 4. 清理并切换到真实根目录 (PID 必须为 1)
 # 注意：必须使用 exec 调用 switch_root
-exec switch_root /mnt/root /sbin/init
+#exec switch_root /mnt/root /sbin/init
 
 
 
 . /lib/functions.sh
+echo "111\n"
 . /lib/functions/preinit.sh
+echo "121\n"
 . /lib/functions/system.sh
-
+echo "131\n"
 boot_hook_init preinit_essential
+echo "141\n"
 boot_hook_init preinit_main
+echo "151\n"
 boot_hook_init failsafe
+echo "161\n"
 boot_hook_init initramfs
+echo "161\n"
 boot_hook_init preinit_mount_root
-
+echo "171\n"
 for pi_source_file in /lib/preinit/*; do
 	. $pi_source_file
 done
-
+echo "181\n"
 boot_run_hook preinit_essential
-
+echo "191\n"
 pi_mount_skip_next=false
 pi_jffs2_mount_success=false
 pi_failsafe_net_message=false
-
+echo "1a1\n"
 boot_run_hook preinit_main
+echo "1b1\n"
