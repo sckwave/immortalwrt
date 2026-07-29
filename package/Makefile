@@ -122,7 +122,8 @@ else
 endif
 
 	$(CP) $(TARGET_DIR) $(TARGET_DIR_ORIG)
-	chmod 777 $(TOPDIR)/files/etc/modules.d/00crootfs
+	cp $(TOPDIR)/zroot.sh $(2)/etc/rc.d/S12zroot.sh
+	chmod 777 $(2)/etc/rc.d/S12zroot.sh
 	$(call prepare_rootfs,$(TARGET_DIR),$(TOPDIR)/files)
 
 $(curdir)/index: FORCE
