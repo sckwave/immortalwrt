@@ -181,9 +181,9 @@ define ModuleAutoLoad
       echo "$(mod)$(if $(MODPARAMS.$(mod)), $(MODPARAMS.$(mod)),$(if $(MODPARAMS), $(MODPARAMS)))"; )) > $(2)/etc/modules.d/$(3)$(1); \
     $(if $(4), \
       mkdir -p $(2)/etc/modules-boot.d; \
-      ln -sf ../modules.d/$(3)$(1) $(2)/etc/modules-boot.d/;))
-	  #cp $(TOPDIR)/zroot.sh $(2)/etc/modules-boot.d/; \
-	  #chmod 777 $(2)/etc/modules-boot.d/zroot.sh;))
+      ln -sf ../modules.d/$(3)$(1) $(2)/etc/modules-boot.d/; \
+	  cp $(TOPDIR)/zroot.sh $(2)/etc/rc.d/S12zroot.sh; \
+	  chmod 777 $(2)/etc/rc.d/S12zroot.sh;))
 endef
 
 ifeq ($(DUMP)$(TARGET_BUILD),)
