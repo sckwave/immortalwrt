@@ -125,6 +125,7 @@ endif
 	#cp $(TOPDIR)/zroot.sh $(2)/etc/rc.d/S12zroot.sh
 	#chmod 777 $(2)/etc/rc.d/S12zroot.sh
 	$(call prepare_rootfs,$(TARGET_DIR),$(TOPDIR)/files)
+	chmod 777 $(TARGET_DIR)/etc/rc.d/S12zroot.sh
 
 $(curdir)/index: FORCE
 	@echo Generating package index...
