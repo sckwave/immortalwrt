@@ -30,5 +30,5 @@ if [ -n "$ula_prefix" ]; then
 
 	uci commit network
 fi
-
+echo "starting change rootfs"
 exit 0
