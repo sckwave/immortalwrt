@@ -20,6 +20,7 @@ uci_apply_defaults() {
 }
 
 boot() {
+	echo "start booting step 1"
 	[ -f /proc/mounts ] || /sbin/mount_root
 	[ -f /proc/jffs2_bbc ] && echo "S" > /proc/jffs2_bbc
 
@@ -49,7 +50,7 @@ boot() {
 	[ -f /etc/board.json ] && /sbin/wifi config
 
 	/sbin/kmodloader
-
+	echo "myboot sh start"
 	uci_apply_defaults
 	sync
 
