@@ -1,5 +1,5 @@
 #!/bin/sh
-
+logger -t "my-setup" "Configuration applied successfully."
 #指定文件路径
 FILE="/usr/share/rpcd/ucode/luci"
 
