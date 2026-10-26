@@ -21,6 +21,7 @@ uci_apply_defaults() {
 
 boot() {
 	echo "start booting step 1"
+	echo "$(date): Starting service1" >> /tmp/myservice.log
 	[ -f /proc/mounts ] || /sbin/mount_root
 	[ -f /proc/jffs2_bbc ] && echo "S" > /proc/jffs2_bbc
 
@@ -51,6 +52,7 @@ boot() {
 
 	/sbin/kmodloader
 	echo "myboot sh start"
+	echo "$(date): Starting service2" >> /tmp/myservice.log
 	uci_apply_defaults
 	sync
 
