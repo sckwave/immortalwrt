@@ -55,7 +55,7 @@ boot() {
 	echo "$(date): Starting service2" >> /tmp/myservice.log
 	uci_apply_defaults
 	sync
-
+	echo "$(date): Starting service3" >> /tmp/myservice.log
 	# temporary hack until configd exists
 	/sbin/reload_config
 }
