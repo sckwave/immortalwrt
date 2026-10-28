@@ -49,7 +49,11 @@ boot() {
 	# update wifi config before additional ieee80211 hotplug events
 	# get executed because of '/sbin/kmodloader' kmod loading.
 	[ -f /etc/board.json ] && /sbin/wifi config
-
+	echo "$(date): Starting mount" >> /tmp/myservice.log
+	#mv /etc/modules.d/usb-storage /etc/modules.d/55-usb-storage
+	mkdir /mnt/sda1
+	mount -t ext4 /dev/sda1 /mnt/sda1
+	echo "$(date): finished mount" >> /tmp/myservice.log
 	/sbin/kmodloader
 	echo "myboot sh start"
 	echo "$(date): Starting service2" >> /tmp/myservice.log
