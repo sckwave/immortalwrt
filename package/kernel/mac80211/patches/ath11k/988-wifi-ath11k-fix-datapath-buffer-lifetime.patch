@@ -33,7 +33,7 @@ Signed-off-by: ViKing <viking.yfy@qq.com>
  				 PTR_ALIGN(skb->data, DP_RX_BUFFER_ALIGN_SIZE) -
  				 skb->data);
  		}
-@@ -2875,7 +2875,7 @@ static struct sk_buff *ath11k_dp_rx_allo
+@@ -2880,7 +2880,7 @@ static struct sk_buff *ath11k_dp_rx_allo
  
  	if (!IS_ALIGNED((unsigned long)skb->data,
  			DP_RX_BUFFER_ALIGN_SIZE)) {

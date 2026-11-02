@@ -40,7 +40,7 @@ Signed-off-by: pbs05 <27010143+pbs05@users.noreply.github.com>
  obj-$(CONFIG_NVMEM_APPLE_SPMI)		+= apple_nvmem_spmi.o
 --- /dev/null
 +++ b/drivers/nvmem/airoha-efuse.c
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,93 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/* Airoha AN7583 eFuse driver */
 +
@@ -133,3 +133,4 @@ Signed-off-by: pbs05 <27010143+pbs05@users.noreply.github.com>
 +module_platform_driver(an7583_efuse_driver);
 +
 +MODULE_DESCRIPTION("Airoha AN7583 eFuse driver");
++MODULE_LICENSE("GPL");

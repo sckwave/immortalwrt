@@ -1,5 +1,5 @@
 From 686c603f67ae87bf21a61b5e4b1564443f41c3ee Mon Sep 17 00:00:00 2001
-From: Christian Marangi <ansuelsmth@gmail.com>
+From: ViKing <viking.yfy@qq.com>
 Date: Thu, 20 Oct 2022 03:34:43 +0200
 Subject: [PATCH] net: permit ieee80211_ptr even with no CFG82111 support
 
@@ -14,6 +14,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  net/batman-adv/hard-interface.c | 2 +-
  net/wireless/Kconfig            | 4 ++++
  3 files changed, 6 insertions(+), 2 deletions(-)
+
+Signed-off-by: ViKing <viking.yfy@qq.com>
 
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h

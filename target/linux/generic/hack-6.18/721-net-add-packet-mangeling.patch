@@ -1,5 +1,5 @@
 From ffe387740bbe88dd88bbe04d6375902708003d6e Mon Sep 17 00:00:00 2001
-From: Felix Fietkau <nbd@nbd.name>
+From: ViKing <viking.yfy@qq.com>
 Date: Fri, 7 Jul 2017 17:25:00 +0200
 Subject: net: add packet mangeling
 
@@ -16,6 +16,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  net/core/skbuff.c         | 17 +++++++++++++++++
  net/ethernet/eth.c        |  6 ++++++
  6 files changed, 58 insertions(+), 15 deletions(-)
+
+Signed-off-by: ViKing <viking.yfy@qq.com>
 
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h

@@ -2,17 +2,20 @@
 
 import * as nl80211 from 'nl80211';
 import * as libubus from 'ubus';
-import { readfile, stat } from "fs";
+import { glob, readfile, stat } from "fs";
+import { json_file_read, board_wlan } from 'wifi.utils';
 
-let wifi_devices = json(readfile('/usr/share/wifi_devices.json'));
-let countries = json(readfile('/usr/share/iso3166.json'));
-let board_data = json(readfile('/etc/board.json'));
+let wifi_devices = json_file_read('/usr/share/wifi_devices.json');
+let countries = json_file_read('/usr/share/iso3166.json');
+let wlan_data = board_wlan();
 
 let ubus = libubus.connect();
+let bss_ubus = libubus.connect(null, 2);
 
 export let phys;
 let interfaces;
 let wireless_status;
+let wsi_pci_families = {};
 
 function find_phy(wiphy) {
 	for (let k,  phy in phys)
@@ -31,6 +34,38 @@ function get_survey(iface) {
 
 function get_noise(iface) {
 	return iface.survey?.noise ?? -100;
+}
+
+function get_wsi_pci_family(phy_name) {
+	if (phy_name in wsi_pci_families)
+		return wsi_pci_families[phy_name];
+
+	let peers = map(glob(`/sys/class/ieee80211/${phy_name}/device/of_node/ports/*/endpoint*/remote-endpoint`) ?? [], path => readfile(path));
+	let family = null;
+	for (let path in glob('/sys/bus/pci/devices/*') ?? []) {
+		let linked = false;
+		for (let endpoint in glob(path + '/of_node/ports/*/endpoint*/phandle') ?? []) {
+			let phandle = readfile(endpoint);
+			if (length(phandle) == 4 && index(peers, phandle) >= 0)
+				linked = true;
+		}
+		if (!linked)
+			continue;
+
+		let ids = map([ 'vendor', 'device', 'subsystem_vendor', 'subsystem_device' ],
+			key => lc(trim(readfile(path + '/' + key) ?? '', '\n')));
+		for (let device in wifi_devices.pci) {
+			if (length(filter([ 0, 1, 2, 3 ], i =>
+				ids[i] == lc(device[i]) || lc(device[i]) == '0xffff')) != 4)
+				continue;
+			let candidate = `${device[6]} ${device[7]}`;
+			if (family != null && family != candidate)
+				return wsi_pci_families[phy_name] = null;
+			family = candidate;
+		}
+	}
+
+	return wsi_pci_families[phy_name] = family;
 }
 
 function get_country(iface) {
@@ -58,13 +93,14 @@ function get_hardware_id(iface) {
 		channel_offset: 0,
 	};
 
-	let path = `/sys/class/ieee80211/phy${iface.wiphy}/device/`;
+	let phy_name = find_phy(iface.wiphy)?.wiphy_name ?? `phy${iface.wiphy}`;
+	let path = `/sys/class/ieee80211/${phy_name}/device/`;
 	if (stat(path + 'vendor')) {
 		let data = [];
 		for (let lookup in [ 'vendor', 'device', 'subsystem_vendor', 'subsystem_device' ])
 			push(data, trim(readfile(path + lookup), '\n'));
 		
-		for (let device in wifi_devices.pci) {
+		for (let device in wifi_devices?.pci) {
 			let match = 0;
 			for (let i = 0; i < 4; i++)
 				if (lc(data[i]) == lc(device[i]))
@@ -79,10 +115,13 @@ function get_hardware_id(iface) {
 	}
 
 	let compatible = trim(readfile(`/sys/class/net/${iface.ifname}/device/of_node/compatible`), '\n');
-	if (compatible && wifi_devices.compatible[compatible]) {
+	if (compatible && wifi_devices?.compatible?.[compatible]) {
 		hw.id = wifi_devices.compatible[compatible][0] + ' ' + wifi_devices.compatible[compatible][1];
 		hw.compatible = compatible;
 		hw.type = 'embedded';
+
+		if (iface.wiphy_freq >= 4900 && iface.wiphy_freq < 7125)
+			hw.id = get_wsi_pci_family(phy_name) ?? hw.id;
 	}
 
 	return hw;
@@ -95,10 +134,24 @@ const iftypes = [
 
 export let ifaces = {};
 
+function bss_info_get(daemon, ifname, timed_out) {
+	if (timed_out[daemon])
+		return null;
+
+	let bss_info = bss_ubus.call(daemon, 'bss_info', { iface: ifname });
+	if (bss_ubus.error(true) == libubus.STATUS_TIMEOUT)
+		timed_out[daemon] = true;
+
+	return bss_info;
+}
+
 export function update() {
+	let timed_out = {};
+
 	phys = nl80211.request(nl80211.const.NL80211_CMD_GET_WIPHY, nl80211.const.NLM_F_DUMP, { split_wiphy_dump: true });
 	interfaces = nl80211.request(nl80211.const.NL80211_CMD_GET_INTERFACE, nl80211.const.NLM_F_DUMP);
 	wireless_status = ubus.call('network.wireless', 'status');
+	wsi_pci_families = {};
 
 	ifaces = {};
 	for (let k, v in interfaces) {
@@ -112,9 +165,9 @@ export function update() {
 		iface.assoclist = nl80211.request(nl80211.const.NL80211_CMD_GET_STATION, nl80211.const.NLM_F_DUMP, { dev: v.ifname }) ?? [];
 		iface.hardware = get_hardware_id(iface);
 
-		iface.bss_info = ubus.call('hostapd', 'bss_info', { iface: v.ifname });
+		iface.bss_info = bss_info_get('hostapd', v.ifname, timed_out);
 		if (!iface.bss_info)
-			iface.bss_info = ubus.call('wpa_supplicant', 'bss_info', { iface: v.ifname });
+			iface.bss_info = bss_info_get('wpa_supplicant', v.ifname, timed_out);
 	}
 
 	for (let radio, data in wireless_status)
@@ -325,13 +378,20 @@ function dbm2quality(dbm) {
 	return quality;
 }
 
+function get_band_modes(iface) {
+	let band = iface.radio?.band;
+	if (!band)
+		return null;
+
+	return wlan_data?.['phy' + iface.wiphy]?.info?.bands?.[uc(band)]?.modes;
+}
+
 function hwmodelist(name) {
 	const mode = { 'HT*': 'n', 'VHT*': 'ac', 'HE*': 'ax', 'EHT*': 'be' };
 	let iface = ifaces[name];
-	let phy = board_data.wlan?.['phy' + iface.wiphy];
-	if (!phy || !iface.radio?.band)
+	let htmodes = get_band_modes(iface);
+	if (!htmodes)
 		return '';
-	let htmodes = phy.info.bands[uc(iface.radio.band)].modes;
 	let list = [];
 	if (iface.radio.band == '2g' && 'NOHT' in htmodes)
 		push(list, 'g/b');
@@ -492,12 +552,11 @@ export function info(name) {
 };
 
 export function htmodelist(name) {
-	let iface = ifaces[name];
-	let phy = board_data.wlan?.['phy' + iface.wiphy];
-	if (!phy || !iface.radio.band)
+	let htmodes = get_band_modes(ifaces[name]);
+	if (!htmodes)
 		return [];
 
-	return filter(phy.info.bands[uc(iface.radio.band)].modes, (v) => v != 'NOHT');
+	return filter(htmodes, (v) => v != 'NOHT');
 };
 
 export function txpowerlist(name) {
@@ -570,6 +629,38 @@ function scan_extension(ext, cell) {
 	}
 };
 
+const scan_done_cmds = [
+	nl80211.const.NL80211_CMD_NEW_SCAN_RESULTS,
+	nl80211.const.NL80211_CMD_SCAN_ABORTED
+];
+
+function clock_ms() {
+	let t = clock(true);
+	return t[0] * 1000 + t[1] / 1000000;
+}
+
+// The event socket stays subscribed for the life of the process and can hold
+// the results of an earlier scan. scan() reads nl80211.error() after the
+// trigger, so clear the timeout error of the drain.
+function scan_events_drain() {
+	while (nl80211.waitfor(scan_done_cmds, 0))
+		;
+	nl80211.error();
+}
+
+function scan_done_wait(dev, timeout_ms) {
+	let deadline = clock_ms() + timeout_ms;
+	let left;
+
+	while ((left = deadline - clock_ms()) > 0) {
+		let res = nl80211.waitfor(scan_done_cmds, left);
+		if (!res || res.msg?.dev == dev)
+			return res;
+	}
+
+	return null;
+}
+
 export function scan(dev) {
 	const rsn_cipher = [ 'NONE', 'WEP-40', 'TKIP', 'WRAP', 'CCMP', 'WEP-104', 'AES-OCB', 'CKIP', 'GCMP', 'GCMP-256', 'CCMP-256' ];
 	const ht_chan_offset = [ 'no secondary', 'above', '[reserved]', 'below' ];
@@ -583,6 +674,8 @@ export function scan(dev) {
 		scan_ssids: [ '' ],
 	};
 
+	scan_events_drain();
+
 	nl80211.request(nl80211.const.NL80211_CMD_TRIGGER_SCAN, 0, params);
 	let err = nl80211.error();
 	if (err) {
@@ -590,10 +683,7 @@ export function scan(dev) {
 		return null;
 	}
 
-	let res = nl80211.waitfor([
-		nl80211.const.NL80211_CMD_NEW_SCAN_RESULTS,
-		nl80211.const.NL80211_CMD_SCAN_ABORTED
-	], 5000);
+	let res = scan_done_wait(dev, 5000);
 
 	if (!res) {
 		warn("Netlink error while awaiting scan results on " + dev + ": " + nl80211.error() + "\n");

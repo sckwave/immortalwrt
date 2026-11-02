@@ -1,4 +1,5 @@
 From: ViKing <viking.yfy@qq.com>
+Date: Mon, 26 Oct 2026 17:45:48 +0800
 Subject: [PATCH] netfilter: flowtable: preserve 8021ad and PPPoE ingress identity
 
 Treat 802.1ad as a VLAN in flow matching, VLAN actions and single in-band
@@ -21,6 +22,42 @@ Signed-off-by: ViKing <viking.yfy@qq.com>
  	union {
  		struct flow_dissector_key_ipv4_addrs	ipv4;
  		struct flow_dissector_key_ipv6_addrs	ipv6;
+--- a/net/netfilter/nf_flow_table_inet.c
++++ b/net/netfilter/nf_flow_table_inet.c
+@@ -17,6 +17,7 @@ nf_flow_offload_inet_hook(void *priv, st
+ 
+ 	switch (skb->protocol) {
+ 	case htons(ETH_P_8021Q):
++	case htons(ETH_P_8021AD):
+ 		if (!pskb_may_pull(skb, skb_mac_offset(skb) + sizeof(*veth)))
+ 			return NF_ACCEPT;
+ 
+--- a/net/netfilter/nf_flow_table_ip.c
++++ b/net/netfilter/nf_flow_table_ip.c
+@@ -156,6 +156,7 @@ static void nf_flow_tuple_encap(struct s
+ 	}
+ 	switch (skb->protocol) {
+ 	case htons(ETH_P_8021Q):
++	case htons(ETH_P_8021AD):
+ 		veth = (struct vlan_ethhdr *)skb_mac_header(skb);
+ 		tuple->encap[i].id = ntohs(veth->h_vlan_TCI) & VLAN_VID_MASK;
+ 		tuple->encap[i].proto = skb->protocol;
+@@ -286,6 +287,7 @@ static bool nf_flow_skb_encap_protocol(s
+ 
+ 	switch (skb->protocol) {
+ 	case htons(ETH_P_8021Q):
++	case htons(ETH_P_8021AD):
+ 		if (!pskb_may_pull(skb, skb_mac_offset(skb) + sizeof(*veth)))
+ 			return false;
+ 
+@@ -320,6 +322,7 @@ static void nf_flow_encap_pop(struct sk_
+ 		}
+ 		switch (skb->protocol) {
+ 		case htons(ETH_P_8021Q):
++		case htons(ETH_P_8021AD):
+ 			vlan_hdr = (struct vlan_hdr *)skb->data;
+ 			__skb_pull(skb, VLAN_HLEN);
+ 			vlan_set_encap_proto(skb, vlan_hdr);
 --- a/net/netfilter/nf_flow_table_offload.c
 +++ b/net/netfilter/nf_flow_table_offload.c
 @@ -97,6 +97,7 @@ static int nf_flow_rule_match(struct nf_
@@ -90,39 +127,3 @@ Signed-off-by: ViKing <viking.yfy@qq.com>
  			entry->id = FLOW_ACTION_VLAN_PUSH;
  			entry->vlan.vid = other_tuple->encap[i].id;
  			entry->vlan.proto = other_tuple->encap[i].proto;
---- a/net/netfilter/nf_flow_table_ip.c
-+++ b/net/netfilter/nf_flow_table_ip.c
-@@ -156,6 +156,7 @@ static void nf_flow_tuple_encap(struct s
- 	}
- 	switch (skb->protocol) {
- 	case htons(ETH_P_8021Q):
-+	case htons(ETH_P_8021AD):
- 		veth = (struct vlan_ethhdr *)skb_mac_header(skb);
- 		tuple->encap[i].id = ntohs(veth->h_vlan_TCI);
- 		tuple->encap[i].proto = skb->protocol;
-@@ -286,6 +287,7 @@ static bool nf_flow_skb_encap_protocol(s
- 
- 	switch (skb->protocol) {
- 	case htons(ETH_P_8021Q):
-+	case htons(ETH_P_8021AD):
- 		if (!pskb_may_pull(skb, skb_mac_offset(skb) + sizeof(*veth)))
- 			return false;
- 
-@@ -320,6 +322,7 @@ static void nf_flow_encap_pop(struct sk_
- 		}
- 		switch (skb->protocol) {
- 		case htons(ETH_P_8021Q):
-+		case htons(ETH_P_8021AD):
- 			vlan_hdr = (struct vlan_hdr *)skb->data;
- 			__skb_pull(skb, VLAN_HLEN);
- 			vlan_set_encap_proto(skb, vlan_hdr);
---- a/net/netfilter/nf_flow_table_inet.c
-+++ b/net/netfilter/nf_flow_table_inet.c
-@@ -17,6 +17,7 @@ nf_flow_offload_inet_hook(void *priv, st
- 
- 	switch (skb->protocol) {
- 	case htons(ETH_P_8021Q):
-+	case htons(ETH_P_8021AD):
- 		if (!pskb_may_pull(skb, skb_mac_offset(skb) + sizeof(*veth)))
- 			return NF_ACCEPT;
- 

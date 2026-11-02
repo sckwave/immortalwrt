@@ -1078,7 +1078,7 @@ Signed-off-by: ViKing <viking.yfy@qq.com>
  }
  
  /**
-@@ -574,6 +576,7 @@ int edma_port_setup(struct ppe_port *por
+@@ -581,6 +583,7 @@ int edma_port_setup(struct ppe_port *por
  register_netdev_fail:
  	ppe_port_phylink_destroy(port);
  port_phylink_setup_fail:
@@ -1272,7 +1272,7 @@ Signed-off-by: ViKing <viking.yfy@qq.com>
  
 --- a/drivers/net/ethernet/qualcomm/ppe/ppe_port.c
 +++ b/drivers/net/ethernet/qualcomm/ppe/ppe_port.c
-@@ -15,6 +15,7 @@
+@@ -16,6 +16,7 @@
  #include <linux/reset.h>
  #include <linux/rtnetlink.h>
  
@@ -1280,7 +1280,7 @@ Signed-off-by: ViKing <viking.yfy@qq.com>
  #include "edma_port.h"
  #include "ppe.h"
  #include "ppe_flowtable.h"
-@@ -1524,6 +1525,7 @@ err_port_clk:
+@@ -1530,6 +1531,7 @@ err_port_clk:
  	ppe_port_clock_deinit(&ppe_ports->port[i]);
  err_port_setup:
  	/* Destroy edma ports created till now */
@@ -1288,7 +1288,7 @@ Signed-off-by: ViKing <viking.yfy@qq.com>
  	while (i) {
  		i--;
  		edma_port_destroy(&ppe_ports->port[i]);
-@@ -1548,6 +1550,8 @@ void ppe_port_mac_deinit(struct ppe_devi
+@@ -1554,6 +1556,8 @@ void ppe_port_mac_deinit(struct ppe_devi
  	struct ppe_port *ppe_port;
  	int i;
  

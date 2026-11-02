@@ -1,50 +1,17 @@
-From 67edad5e196f088098d25e1c843ffbf798627860 Mon Sep 17 00:00:00 2001
 From: Igor Kravchenko <igor.kravchenko05@gmail.com>
-Date: Mon, 13 Jul 2026 19:13:59 +0000
+Date: Wed, 28 Oct 2026 13:34:14 +0800
 Subject: [PATCH] net: ethernet: qualcomm: ppe: fix RX DMA mappings
 
-EDMA writes received frames into buffers supplied by the RxFill ring.
-Map them with DMA_FROM_DEVICE and use the same direction when unmapping.
+Normalize the series position without changing the implementation.
 
-The driver currently maps those buffers with DMA_TO_DEVICE but unmaps
-them with DMA_FROM_DEVICE. Besides violating the DMA API direction
-pairing requirement, this can skip CPU cache invalidation on
-non-coherent systems and expose stale RX data.
+Based on work by:
+  Igor Kravchenko <igor.kravchenko05@gmail.com>
 
-Also unmap buffers still attached to RxFill and RxDesc descriptors
-during ring cleanup. Freeing an skb alone does not release its streaming
-DMA mapping, leaving mappings behind on error handling and teardown.
-
-Read back the ring enable registers after disabling them, ensuring the
-disable writes reach the hardware before cleanup touches descriptors and
-buffers.
+Original-commit: 67edad5e196f088098d25e1c843ffbf798627860
 
 Signed-off-by: Igor Kravchenko <igor.kravchenko05@gmail.com>
----
- drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c | 26 ++++++++++++++++++++++++++
- drivers/net/ethernet/qualcomm/ppe/edma_rx.c     |  4 ++--
- drivers/net/ethernet/qualcomm/ppe/edma_rx.h     |  2 ++
+Signed-off-by: ViKing <viking.yfy@qq.com>
 
---- a/drivers/net/ethernet/qualcomm/ppe/edma_rx.c
-+++ b/drivers/net/ethernet/qualcomm/ppe/edma_rx.c
-@@ -58,7 +58,7 @@ static int edma_rx_alloc_buffer_list(str
- 		skb_reserve(skb, EDMA_RX_SKB_HEADROOM + NET_IP_ALIGN);
- 
- 		if (likely(!page_mode)) {
--			buff_addr = dma_map_single(dev, skb->data, dma_map_size, DMA_TO_DEVICE);
-+			buff_addr = dma_map_single(dev, skb->data, dma_map_size, DMA_FROM_DEVICE);
- 			if (dma_mapping_error(dev, buff_addr)) {
- 				dev_dbg(dev, "edma_context:%pK Unable to dma for non page mode",
- 					edma_ctx);
-@@ -77,7 +77,7 @@ static int edma_rx_alloc_buffer_list(str
- 				break;
- 			}
- 
--			buff_addr = dma_map_page(dev, pg, 0, PAGE_SIZE, DMA_TO_DEVICE);
-+			buff_addr = dma_map_page(dev, pg, 0, PAGE_SIZE, DMA_FROM_DEVICE);
- 			if (dma_mapping_error(dev, buff_addr)) {
- 				dev_dbg(dev, "edma_context:%pK Mapping error for page mode",
- 					edma_ctx);
 --- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
 +++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
 @@ -43,6 +43,22 @@ static u32 edma_rx_ring_queue_map[][EDMA
@@ -122,6 +89,26 @@ Signed-off-by: Igor Kravchenko <igor.kravchenko05@gmail.com>
  		dev_kfree_skb_any(skb);
  	}
  
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_rx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_rx.c
+@@ -58,7 +58,7 @@ static int edma_rx_alloc_buffer_list(str
+ 		skb_reserve(skb, EDMA_RX_SKB_HEADROOM + NET_IP_ALIGN);
+ 
+ 		if (likely(!page_mode)) {
+-			buff_addr = dma_map_single(dev, skb->data, dma_map_size, DMA_TO_DEVICE);
++			buff_addr = dma_map_single(dev, skb->data, dma_map_size, DMA_FROM_DEVICE);
+ 			if (dma_mapping_error(dev, buff_addr)) {
+ 				dev_dbg(dev, "edma_context:%pK Unable to dma for non page mode",
+ 					edma_ctx);
+@@ -77,7 +77,7 @@ static int edma_rx_alloc_buffer_list(str
+ 				break;
+ 			}
+ 
+-			buff_addr = dma_map_page(dev, pg, 0, PAGE_SIZE, DMA_TO_DEVICE);
++			buff_addr = dma_map_page(dev, pg, 0, PAGE_SIZE, DMA_FROM_DEVICE);
+ 			if (dma_mapping_error(dev, buff_addr)) {
+ 				dev_dbg(dev, "edma_context:%pK Mapping error for page mode",
+ 					edma_ctx);
 --- a/drivers/net/ethernet/qualcomm/ppe/edma_rx.h
 +++ b/drivers/net/ethernet/qualcomm/ppe/edma_rx.h
 @@ -124,6 +124,8 @@

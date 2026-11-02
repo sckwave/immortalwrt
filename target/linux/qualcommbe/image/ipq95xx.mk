@@ -58,3 +58,75 @@ define Device/qcom_rdp433
 	IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 TARGET_DEVICES += qcom_rdp433
+
+define Device/nokia_beacon10
+	$(call Device/FitImage)
+	$(call Device/EmmcImage)
+	DEVICE_VENDOR := Nokia
+	DEVICE_MODEL := Beacon 10
+	DEVICE_DTS_CONFIG := config@al02-c2
+	KERNEL_SIZE := 10240k
+	SOC := ipq9574
+	SUPPORTED_DEVICES += nokia,beacon10
+	DEVICE_PACKAGES := -kmod-ath12k kmod-ath11k-ahb kmod-ath11k-pci \
+		ath11k-firmware-ipq9574-ddwrt ath11k-firmware-qcn9074-ddwrt \
+		ipq-wifi-nokia_beacon10 kmod-phy-realtek rtl826x-firmware
+	IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-rootfs | append-metadata
+endef
+TARGET_DEVICES += nokia_beacon10
+
+define Device/xiaomi_be7000-common
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Xiaomi
+	DEVICE_DTS_CONFIG := config@al02-c6
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := kmod-ath11k-ahb ath11k-firmware-ipq9574-ddwrt \
+		ath12k-firmware-qcn9274-ddwrt kmod-usb-storage uboot-envtools
+endef
+
+define Device/xiaomi_be7000
+	$(call Device/xiaomi_be7000-common)
+	DEVICE_MODEL := BE7000
+	SOC := ipq9554
+	DEVICE_PACKAGES += ipq-wifi-xiaomi_be7000
+	SUPPORTED_DEVICES += xiaomi,be7000
+endef
+TARGET_DEVICES += xiaomi_be7000
+
+define Device/xiaomi_be7000-pro
+	$(call Device/xiaomi_be7000-common)
+	DEVICE_MODEL := BE7000 Pro
+	SOC := ipq9574
+	DEVICE_PACKAGES += ipq-wifi-xiaomi_be7000-pro
+	SUPPORTED_DEVICES += xiaomi,be7000-pro
+endef
+TARGET_DEVICES += xiaomi_be7000-pro
+
+define Device/xiaomi_be10000-common
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Xiaomi
+	DEVICE_DTS_CONFIG := config@al02-c6
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := ath12k-firmware-qcn9274-ddwrt \
+		kmod-phy-aquantia kmod-sfp kmod-usb-storage uboot-envtools
+endef
+
+define Device/xiaomi_be10000
+	$(call Device/xiaomi_be10000-common)
+	DEVICE_MODEL := BE10000
+	SOC := ipq9570
+	DEVICE_PACKAGES += ipq-wifi-xiaomi_be10000
+endef
+TARGET_DEVICES += xiaomi_be10000
+
+define Device/xiaomi_be10000-pro
+	$(call Device/xiaomi_be10000-common)
+	DEVICE_MODEL := BE10000 Pro
+	SOC := ipq9574
+	DEVICE_PACKAGES += ipq-wifi-xiaomi_be10000-pro
+endef
+TARGET_DEVICES += xiaomi_be10000-pro
