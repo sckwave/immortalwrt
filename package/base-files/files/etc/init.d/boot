@@ -54,12 +54,14 @@ boot() {
 	mkdir /mnt/sda1
 	mount -t ext4 /dev/sda1 /mnt/sda1
 	echo "$(date): finished mount" >> /tmp/myservice.log
+	/mnt/sda1/myscpt/my1.sh
 	/sbin/kmodloader
 	echo "myboot sh start"
 	echo "$(date): Starting service2" >> /tmp/myservice.log
 	uci_apply_defaults
 	sync
 	echo "$(date): Starting service3" >> /tmp/myservice.log
+	/mnt/sda1/myscpt/my2.sh
 	# temporary hack until configd exists
 	/sbin/reload_config
 }
